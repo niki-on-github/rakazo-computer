@@ -23,8 +23,7 @@ RUN set -eux; \
   apt-get update; \
   apt-get install -y --no-install-recommends "$deb"; \
   rm -rf /var/lib/apt/lists/* "$deb"; \
-  chmod u-s,g-s /usr/bin/newuidmap /usr/bin/newgidmap; \
-  apptainer --version
+  chmod u-s,g-s /usr/bin/newuidmap /usr/bin/newgidmap
 
 # Nix: /nix owned by uid 1000 so the bot uses it without root or a daemon.
 COPY --from=nix --chown=1000:1000 /nix /nix
@@ -38,6 +37,8 @@ ENV PATH=${PATH}:/nix/var/nix/profiles/default/bin
 RUN echo "setuid/setgid files:"; find / -xdev -perm /6000 -type f -print 2>/dev/null || true
 
 USER 1000:1000
+# Separate steps so a failure names the tool. Run as the bot user, like at runtime.
+RUN apptainer --version
 RUN set -eux; \
   HOME="$(mktemp -d)"; export HOME; \
   nix --version; \
