@@ -54,6 +54,13 @@ Rules:
 
 pip and uv already use a local PyPI mirror (`PIP_INDEX_URL`, `UV_DEFAULT_INDEX`); do not override the index.
 
+## Hugging Face models
+
+Hugging Face downloads (`huggingface_hub`, `transformers`, `hf download`) go through a local cache
+(`HF_ENDPOINT`); do not override it. Downloads are stored in `~/.cache/huggingface` on the shared home disk:
+fetch only what you need and delete models you are done with. There is no Hugging Face token; gated or private
+models are not available.
+
 Other ways that keep working across updates (they install into the home):
 
 - Python tools: `uv tool install <pkg>` (puts commands in `~/.local/bin`) or `uvx <pkg>` for one run.
