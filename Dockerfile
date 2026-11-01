@@ -39,6 +39,10 @@ COPY --chmod=644 rootfs/etc/profile.d/nix.sh /etc/profile.d/nix.sh
 # Appended, not prepended: Debian's tools stay first, Nix only adds `nix` & co.
 ENV PATH=${PATH}:/nix/var/nix/profiles/default/bin
 
+# No /dev/fuse in the pod: unpack SIF images to a temporary sandbox instead of
+# mounting them with the bundled squashfuse (same as `apptainer exec --unsquash`).
+ENV APPTAINER_UNSQUASH=true
+
 # Report what can still gain privileges (the pod does not set no_new_privs).
 RUN unset LD_PRELOAD; echo "setuid/setgid files:"; find / -xdev -perm /6000 -type f -print 2>/dev/null || true
 
