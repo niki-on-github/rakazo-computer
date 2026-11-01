@@ -37,16 +37,6 @@
         "github-actions"
       ],
       "groupName": "github actions"
-    },
-    {
-      "description": "Major updates open a PR for review instead of being committed to main",
-      "matchUpdateTypes": [
-        "major"
-      ],
-      "automerge": false,
-      "addLabels": [
-        "type/major"
-      ]
     }
   ],
   "ignoreTests": true

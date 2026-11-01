@@ -80,9 +80,9 @@ docker run --rm --user 1000:1000 --security-opt seccomp=unconfined \
 ## Updates
 
 Renovate (`renovate.json`) pins and bumps the base image, `nixos/nix`, the Apptainer release (version and sha256 of
-the `.deb`) and the GitHub Actions. Non-major updates are committed straight to `main` (branch automerge, no PR,
+the `.deb`) and the GitHub Actions. All updates, majors included, are committed straight to `main` (branch automerge, no PR,
 `ignoreTests` because no checks run on Renovate branches); that push builds, tests and publishes. A failing update
-does not replace the published tags: fix or revert it on `main`. Major updates open a PR instead.
+does not replace the published tags: fix or revert it on `main`.
 Requires the [Renovate GitHub App](https://github.com/apps/renovate) on this repo and no branch protection that blocks
 its pushes to `main`. A new Rakazo base tag publishes a new image tag (e.g. `v0.3.7`): move the app and this image
 together in the deployment.
