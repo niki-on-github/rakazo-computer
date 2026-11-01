@@ -56,7 +56,8 @@ apptainer exec docker://alpine:3 cat /etc/alpine-release
 apptainer exec --nv docker://nvidia/cuda:<tag> nvidia-smi   # only if the pod has a GPU
 ```
 
-Do not use `--pid` / `--containall`: the pod's masked `/proc` does not allow a fresh `/proc` mount. The pod has no
+The pod's masked `/proc` does not allow a fresh `/proc` mount, so `apptainer.conf` sets `mount proc = no` and
+`bind path = /proc`: containers see the pod's `/proc`. Do not use `--pid` / `--containall`. The pod has no
 `/dev/fuse`, so the image sets `APPTAINER_UNSQUASH=true`: SIF images are unpacked to a temporary sandbox in `/tmp`
 instead of being mounted with squashfuse. The image cache is `~/.apptainer/cache` (persistent home).
 

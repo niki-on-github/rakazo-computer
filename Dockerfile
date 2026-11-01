@@ -27,6 +27,11 @@ RUN set -eux; \
   apt-get install -y --no-install-recommends "$deb"; \
   rm -rf /var/lib/apt/lists/* "$deb"; \
   chmod u-s,g-s /usr/bin/newuidmap /usr/bin/newgidmap; \
+  # The pod masks parts of /proc, so a fresh proc mount is refused (also for the
+  # unsquashfs helper container). Bind the existing /proc instead; that works.
+  sed -i -e 's/^mount proc = yes$/mount proc = no/' /etc/apptainer/apptainer.conf; \
+  printf '%s\n' 'bind path = /proc' >> /etc/apptainer/apptainer.conf; \
+  grep -qx 'mount proc = no' /etc/apptainer/apptainer.conf; \
   install -d -m 755 /etc/nix
 
 # Nix: /nix owned by uid 1000 so the bot uses it without root or a daemon.
