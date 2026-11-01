@@ -14,9 +14,12 @@ USER root
 # Apptainer (non-suid build) for rootless containers. The package pulls in
 # uidmap; its setuid bits are removed below, so Apptainer runs in plain
 # unprivileged user-namespace mode (single uid mapping).
+# Every RUN unsets LD_PRELOAD: the base's nss_wrapper needs passwd/group files
+# that only start.sh creates, so user lookups fail at build time.
 ARG APPTAINER_VERSION=v1.5.5
 ARG APPTAINER_SHA256=25095d3711504b3e8657dbb2e172ef8db9db43c4503d940c9c36b105db8dce77
 RUN set -eux; \
+  unset LD_PRELOAD; \
   deb="/tmp/apptainer_${APPTAINER_VERSION#v}_amd64.deb"; \
   curl -fsSL -o "$deb" "https://github.com/apptainer/apptainer/releases/download/${APPTAINER_VERSION}/apptainer_${APPTAINER_VERSION#v}_amd64.deb"; \
   echo "${APPTAINER_SHA256}  $deb" | sha256sum -c -; \
@@ -34,12 +37,11 @@ COPY --chmod=644 rootfs/etc/profile.d/nix.sh /etc/profile.d/nix.sh
 ENV PATH=${PATH}:/nix/var/nix/profiles/default/bin
 
 # Report what can still gain privileges (the pod does not set no_new_privs).
-RUN echo "setuid/setgid files:"; find / -xdev -perm /6000 -type f -print 2>/dev/null || true
+RUN unset LD_PRELOAD; echo "setuid/setgid files:"; find / -xdev -perm /6000 -type f -print 2>/dev/null || true
 
 USER 1000:1000
-# Separate steps so a failure names the tool. Run as the bot user. The base's
-# nss_wrapper (LD_PRELOAD) needs files that only start.sh creates, so build-time
-# checks run without it; tests/smoke.sh covers the real runtime environment.
+# Separate steps so a failure names the tool. Run as the bot user;
+# tests/smoke.sh covers the real runtime environment (with nss_wrapper).
 RUN unset LD_PRELOAD; apptainer --version
 RUN set -eux; \
   unset LD_PRELOAD; \
