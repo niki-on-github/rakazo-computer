@@ -16,7 +16,8 @@ around the guard. Never stop or restart the browser or desktop processes.
 - **Only `/home/rakazo` is kept.** Everything else (`/tmp`, `/nix`, anything installed outside the home) is lost
   when the computer is updated or recreated. Put work you want to keep in the home.
 - The home is on a disk shared with other bots. Keep it small and clean up caches you no longer need (see "Disk").
-- Limits: 2 CPU, 4 GiB RAM. Avoid large builds and huge downloads.
+- Limits: 2 CPU, 32 GiB RAM. The machine and its RAM are shared with other services; avoid large builds
+  and huge downloads.
 - Network: the internet is reachable. Private and LAN addresses are blocked, except the Nix cache and the LLM gateway.
 - Never store secrets (tokens, passwords, keys) in files in the home.
 
