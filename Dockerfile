@@ -31,6 +31,9 @@ RUN set -eux; \
   # unsquashfs helper container). Bind the existing /proc instead; that works.
   sed -i -e 's/^mount proc = yes$/mount proc = no/' /etc/apptainer/apptainer.conf; \
   printf '%s\n' 'bind path = /proc' >> /etc/apptainer/apptainer.conf; \
+  # NixOS nodes: the NVIDIA runtime mounts the driver and its glibc under /nix/store, and --nv
+  # copies NixOS-built binaries (nvidia-smi) that need them. Bind the store into containers.
+  printf '%s\n' 'bind path = /nix/store' >> /etc/apptainer/apptainer.conf; \
   grep -qx 'mount proc = no' /etc/apptainer/apptainer.conf; \
   install -d -m 755 /etc/nix /usr/share/doc/rakazo-computer
 
@@ -49,6 +52,8 @@ ENV PATH=${PATH}:/nix/var/nix/profiles/default/bin
 # No /dev/fuse in the pod: unpack SIF images to a temporary sandbox instead of
 # mounting them with the bundled squashfuse (same as `apptainer exec --unsquash`).
 ENV APPTAINER_UNSQUASH=true
+# The base's nss_wrapper preload does not exist inside containers; do not pass it in.
+ENV APPTAINERENV_LD_PRELOAD=
 
 # Report what can still gain privileges (the pod does not set no_new_privs).
 RUN unset LD_PRELOAD; echo "setuid/setgid files:"; find / -xdev -perm /6000 -type f -print 2>/dev/null || true

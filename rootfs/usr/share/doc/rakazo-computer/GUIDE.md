@@ -2,6 +2,13 @@
 
 Read this before you install software, use Nix, run containers or use the GPU.
 
+## The shell tool refuses some commands
+
+Your shell tool has a desktop-protection guard. It refuses commands with `$(...)`, backticks, `$((...))`,
+heredocs (`<<EOF`), some `$VAR` expansions, and `kill` / `pkill` / `killall`. A refusal is not a permission
+error. Rewrite the command without these constructs (for example, use literal values), and do not try to get
+around the guard. Never stop or restart the browser or desktop processes.
+
 ## The basics
 
 - Debian 12 desktop. You are `rakazo` (uid 1000). There is **no root and no sudo**: `apt install` and
@@ -43,6 +50,10 @@ Rules:
 - Builds run without the Nix build sandbox. Prefer packages that come from the cache over building from source.
 - Unfree packages (CUDA and others): `NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#<pkg>`.
 
+## Python packages
+
+pip and uv already use a local PyPI mirror (`PIP_INDEX_URL`, `UV_DEFAULT_INDEX`); do not override the index.
+
 Other ways that keep working across updates (they install into the home):
 
 - Python tools: `uv tool install <pkg>` (puts commands in `~/.local/bin`) or `uvx <pkg>` for one run.
@@ -76,6 +87,7 @@ There is one NVIDIA RTX 3090 (24 GB). Check it with `nvidia-smi`.
     (`uv venv && uv pip install torch`).
   - A CUDA container: `apptainer exec --nv docker://nvidia/cuda:<tag> ...`.
 - CUDA programs built with Nix may not find the driver library; prefer the two options above.
+- `nvidia/cuda:*-base-*` images have no Python; use a `runtime` or `devel` image, or install what you need.
 
 ## Disk
 

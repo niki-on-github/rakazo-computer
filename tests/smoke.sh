@@ -43,6 +43,8 @@ NIX_CONFIG='extra-substituters = https://example.invalid' nix config show substi
 
 step "apptainer"
 apptainer --version || fail "apptainer not installed"
+grep -qx 'bind path = /nix/store' /etc/apptainer/apptainer.conf || fail "apptainer: /nix/store bind missing"
+apptainer exec docker://docker.io/library/alpine:3 sh -c 'test -d /nix/store' || fail "apptainer: /nix/store not bound"
 apptainer exec docker://docker.io/library/alpine:3 sh -c 'echo apptainer-ok; cat /etc/alpine-release' \
   || fail "apptainer exec docker://alpine"
 
