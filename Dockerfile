@@ -26,17 +26,18 @@ RUN set -eux; \
   apt-get update; \
   apt-get install -y --no-install-recommends "$deb"; \
   rm -rf /var/lib/apt/lists/* "$deb"; \
-  chmod u-s,g-s /usr/bin/newuidmap /usr/bin/newgidmap
+  chmod u-s,g-s /usr/bin/newuidmap /usr/bin/newgidmap; \
+  install -d -m 755 /etc/nix
 
 # Nix: /nix owned by uid 1000 so the bot uses it without root or a daemon.
 COPY --from=nix --chown=1000:1000 /nix /nix
+# /etc/nix is created above with 755: COPY --chmod would give a directory it
+# creates 644, and uid 1000 could not read the config (Nix ignores it silently).
 COPY --chmod=644 rootfs/etc/nix/nix.conf /etc/nix/nix.conf
 # Login shells reset PATH in /etc/profile; this puts Nix back.
 COPY --chmod=644 rootfs/etc/profile.d/nix.sh /etc/profile.d/nix.sh
 # Appended, not prepended: Debian's tools stay first, Nix only adds `nix` & co.
 ENV PATH=${PATH}:/nix/var/nix/profiles/default/bin
-# The nixos/nix binary does not read /etc/nix by default; point it there.
-ENV NIX_CONF_DIR=/etc/nix
 
 # Report what can still gain privileges (the pod does not set no_new_privs).
 RUN unset LD_PRELOAD; echo "setuid/setgid files:"; find / -xdev -perm /6000 -type f -print 2>/dev/null || true
@@ -49,6 +50,8 @@ RUN set -eux; \
   unset LD_PRELOAD; \
   HOME="$(mktemp -d)"; export HOME; \
   nix --version; \
+  ls -ld /etc/nix /etc/nix/nix.conf; \
+  test -r /etc/nix/nix.conf; \
   nix config show experimental-features | grep -q flakes; \
   nix eval --expr '1 + 1'; \
   nix flake --help >/dev/null; \
