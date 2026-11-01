@@ -73,7 +73,7 @@ jobs:
             --security-opt apparmor=unconfined \
             --tmpfs /home/rakazo:uid=1000,gid=1000,exec \
             -v "$PWD/tests:/tests:ro" \
-            rakazo-computer:test /tests/smoke.sh
+            rakazo-computer:test env -u LD_PRELOAD /tests/smoke.sh
 
       - name: Log in to GHCR
         uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0

@@ -74,7 +74,7 @@ Local build:
 ```sh
 docker build -t rakazo-computer:dev .
 docker run --rm --user 1000:1000 --security-opt seccomp=unconfined \
-  --tmpfs /home/rakazo:uid=1000,gid=1000,exec -v "$PWD/tests:/tests:ro" rakazo-computer:dev /tests/smoke.sh
+  --tmpfs /home/rakazo:uid=1000,gid=1000,exec -v "$PWD/tests:/tests:ro" rakazo-computer:dev env -u LD_PRELOAD /tests/smoke.sh
 ```
 
 ## Updates

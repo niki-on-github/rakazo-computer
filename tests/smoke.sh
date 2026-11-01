@@ -10,6 +10,9 @@ step() { echo "--- $*"; }
 mkdir -p /tmp/rakazo-nss
 echo "rakazo:x:$(id -u):$(id -g)::$HOME:/bin/bash" > /tmp/rakazo-nss/passwd
 echo "rakazo:x:$(id -g):" > /tmp/rakazo-nss/group
+# The workflow starts this script without the preload (the files did not exist
+# yet); enable it now, like the base's user-env does once the files exist.
+export LD_PRELOAD=/usr/local/lib/libnss_wrapper.so
 
 step "identity"
 [ "$(id -u)" = 1000 ] || fail "not uid 1000"
@@ -32,7 +35,7 @@ nix flake metadata nixpkgs --json | head -c 200; echo
 nix run nixpkgs#hello
 
 step "NIX_CONFIG is honoured at runtime"
-NIX_CONFIG='extra-substituters = https://example.invalid' nix config show extra-substituters \
+NIX_CONFIG='extra-substituters = https://example.invalid' nix config show substituters \
   | grep -q example.invalid || fail "NIX_CONFIG ignored"
 
 step "apptainer"
