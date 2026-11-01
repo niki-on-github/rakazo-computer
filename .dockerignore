@@ -1,0 +1,3 @@
+# Only the Dockerfile inputs are needed in the build context.
+*
+!rootfs/

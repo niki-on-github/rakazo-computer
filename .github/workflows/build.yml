@@ -1,0 +1,109 @@
+name: Build and publish image
+
+# Builds ghcr.io/<owner>/<repo> from the Dockerfile. The image tag follows the
+# upstream base tag in the Dockerfile (FROM ghcr.io/elie222/rakazo/computer:<tag>):
+#   :<base-tag>            moving, rebuilt on every change (pin it by digest)
+#   :<base-tag>-<sha7>     immutable, one per commit
+#   :latest
+# Renovate bumps the base, Nix and Apptainer pins; its PRs run the build and the
+# smoke test without pushing, and each merge to main publishes.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out
+        uses: actions/checkout@v5
+
+      - name: Resolve tags from the base image
+        id: meta
+        run: |
+          BASE_TAG=$(sed -nE 's|^FROM ghcr\.io/elie222/rakazo/computer:([^@[:space:]]+).*|\1|p' Dockerfile)
+          [ -n "$BASE_TAG" ] || { echo "no rakazo computer base in Dockerfile" >&2; exit 1; }
+          SHORT=${GITHUB_SHA::7}
+          IMAGE=${IMAGE,,}
+          {
+            echo "base_tag=$BASE_TAG"
+            echo "tags<<EOT"
+            echo "$IMAGE:$BASE_TAG"
+            echo "$IMAGE:$BASE_TAG-$SHORT"
+            echo "$IMAGE:latest"
+            echo "EOT"
+          } >> "$GITHUB_OUTPUT"
+          echo "Base tag: $BASE_TAG"
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build for the smoke test
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          load: true
+          tags: rakazo-computer:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Mirrors the computer pod: uid 1000, no seccomp filter, an empty home
+      # (the PVC), masked /proc. Ubuntu 24.04 blocks unprivileged user namespaces
+      # through AppArmor; the cluster node (NixOS) does not.
+      - name: Smoke test
+        run: |
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          docker run --rm \
+            --user 1000:1000 \
+            --security-opt seccomp=unconfined \
+            --security-opt apparmor=unconfined \
+            --tmpfs /home/rakazo:uid=1000,gid=1000,exec \
+            -v "$PWD/tests:/tests:ro" \
+            rakazo-computer:test /tests/smoke.sh
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push
+        id: push
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ steps.meta.outputs.base_tag }}
+          cache-from: type=gha
+
+      - name: Record the digest
+        if: github.event_name != 'pull_request'
+        run: |
+          {
+            echo "## ${{ steps.meta.outputs.base_tag }}"
+            echo '```'
+            echo "${IMAGE,,}:${{ steps.meta.outputs.base_tag }}@${{ steps.push.outputs.digest }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
