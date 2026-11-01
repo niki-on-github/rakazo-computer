@@ -2,6 +2,7 @@
 # Runs inside the image as uid 1000 (see the workflow). Mirrors what a bot does:
 # commands run with the image env (LD_PRELOAD nss_wrapper) and a fresh home.
 set -euo pipefail
+trap 'echo "FAIL: line $LINENO: $BASH_COMMAND" >&2' ERR
 
 fail() { echo "FAIL: $*" >&2; exit 1; }
 step() { echo "--- $*"; }
@@ -17,7 +18,7 @@ export LD_PRELOAD=/usr/local/lib/libnss_wrapper.so
 
 step "identity"
 [ "$(id -u)" = 1000 ] || fail "not uid 1000"
-whoami
+whoami || fail "whoami (nss_wrapper files?)"
 
 step "no setuid in what this image adds"
 for f in /usr/bin/newuidmap /usr/bin/newgidmap; do
@@ -25,23 +26,25 @@ for f in /usr/bin/newuidmap /usr/bin/newgidmap; do
 done
 
 step "nix on PATH (exec and login shell)"
-command -v nix
+command -v nix || fail "nix not on PATH (not the rakazo-computer image?)"
 bash -lc 'command -v nix' >/dev/null || fail "nix missing in a login shell"
 [ -w /nix/store ] || fail "/nix/store not writable for uid 1000"
 
 step "nix flakes"
-nix --version
-nix eval --expr '1 + 1'
-nix flake metadata nixpkgs --json | head -c 200; echo
-nix run nixpkgs#hello
+nix --version || fail "nix --version"
+nix eval --expr '1 + 1' || fail "nix eval (flakes/nix-command disabled?)"
+nix flake metadata nixpkgs --json | head -c 200 || fail "nix flake metadata nixpkgs"
+echo
+nix run nixpkgs#hello || fail "nix run nixpkgs#hello"
 
 step "NIX_CONFIG is honoured at runtime"
 NIX_CONFIG='extra-substituters = https://example.invalid' nix config show substituters \
   | grep -q example.invalid || fail "NIX_CONFIG ignored"
 
 step "apptainer"
-apptainer --version
-apptainer exec docker://docker.io/library/alpine:3 sh -c 'echo apptainer-ok; cat /etc/alpine-release'
+apptainer --version || fail "apptainer not installed"
+apptainer exec docker://docker.io/library/alpine:3 sh -c 'echo apptainer-ok; cat /etc/alpine-release' \
+  || fail "apptainer exec docker://alpine"
 
 step "base desktop tools still present"
 for c in python3 Xvfb x11vnc fluxbox xdotool websockify git curl uv gh; do
