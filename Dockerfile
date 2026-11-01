@@ -35,6 +35,8 @@ COPY --chmod=644 rootfs/etc/nix/nix.conf /etc/nix/nix.conf
 COPY --chmod=644 rootfs/etc/profile.d/nix.sh /etc/profile.d/nix.sh
 # Appended, not prepended: Debian's tools stay first, Nix only adds `nix` & co.
 ENV PATH=${PATH}:/nix/var/nix/profiles/default/bin
+# The nixos/nix binary does not read /etc/nix by default; point it there.
+ENV NIX_CONF_DIR=/etc/nix
 
 # Report what can still gain privileges (the pod does not set no_new_privs).
 RUN unset LD_PRELOAD; echo "setuid/setgid files:"; find / -xdev -perm /6000 -type f -print 2>/dev/null || true
@@ -47,6 +49,7 @@ RUN set -eux; \
   unset LD_PRELOAD; \
   HOME="$(mktemp -d)"; export HOME; \
   nix --version; \
+  nix config show experimental-features | grep -q flakes; \
   nix eval --expr '1 + 1'; \
   nix flake --help >/dev/null; \
   rm -rf "$HOME"
