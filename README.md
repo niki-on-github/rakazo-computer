@@ -32,6 +32,13 @@ then use the computer's **Update** action to recreate the pod.
 | Nix | `/nix` copied from `nixos/nix`, owned by uid 1000 | Single-user, no daemon, `sandbox = false`, flakes on. On `PATH` (after the Debian tools) for exec and login shells. |
 | Apptainer | upstream non-suid `.deb`, sha256 pinned | Unprivileged user-namespace mode. The `uidmap` it pulls in is stripped of setuid, so mapping is single-uid. |
 
+| Bot guide | `/usr/share/doc/rakazo-computer/GUIDE.md` | How to use the computer: no root, Nix instead of apt, Apptainer, GPU, disk. |
+
+Point the bots at the guide in their instructions, e.g.:
+
+> Before you install software, use Nix, run containers or use the GPU on your computer, read
+> `/usr/share/doc/rakazo-computer/GUIDE.md` (`cat` it) and follow it.
+
 Nothing else changes: `USER 1000:1000`, `CMD`, `HOME=/home/rakazo`, `DISPLAY` and the nss_wrapper env come from the base.
 
 ### Nix

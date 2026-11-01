@@ -46,6 +46,9 @@ apptainer --version || fail "apptainer not installed"
 apptainer exec docker://docker.io/library/alpine:3 sh -c 'echo apptainer-ok; cat /etc/alpine-release' \
   || fail "apptainer exec docker://alpine"
 
+step "bot guide"
+[ -r /usr/share/doc/rakazo-computer/GUIDE.md ] || fail "GUIDE.md missing or unreadable"
+
 step "base desktop tools still present"
 for c in python3 Xvfb x11vnc fluxbox xdotool websockify git curl uv gh; do
   command -v "$c" >/dev/null || fail "missing $c"

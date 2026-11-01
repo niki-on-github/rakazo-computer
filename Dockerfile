@@ -32,13 +32,15 @@ RUN set -eux; \
   sed -i -e 's/^mount proc = yes$/mount proc = no/' /etc/apptainer/apptainer.conf; \
   printf '%s\n' 'bind path = /proc' >> /etc/apptainer/apptainer.conf; \
   grep -qx 'mount proc = no' /etc/apptainer/apptainer.conf; \
-  install -d -m 755 /etc/nix
+  install -d -m 755 /etc/nix /usr/share/doc/rakazo-computer
 
 # Nix: /nix owned by uid 1000 so the bot uses it without root or a daemon.
 COPY --from=nix --chown=1000:1000 /nix /nix
 # /etc/nix is created above with 755: COPY --chmod would give a directory it
 # creates 644, and uid 1000 could not read the config (Nix ignores it silently).
 COPY --chmod=644 rootfs/etc/nix/nix.conf /etc/nix/nix.conf
+# Usage guide for the bots (their instructions point here).
+COPY --chmod=644 rootfs/usr/share/doc/rakazo-computer/GUIDE.md /usr/share/doc/rakazo-computer/GUIDE.md
 # Login shells reset PATH in /etc/profile; this puts Nix back.
 COPY --chmod=644 rootfs/etc/profile.d/nix.sh /etc/profile.d/nix.sh
 # Appended, not prepended: Debian's tools stay first, Nix only adds `nix` & co.
