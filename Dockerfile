@@ -37,9 +37,12 @@ ENV PATH=${PATH}:/nix/var/nix/profiles/default/bin
 RUN echo "setuid/setgid files:"; find / -xdev -perm /6000 -type f -print 2>/dev/null || true
 
 USER 1000:1000
-# Separate steps so a failure names the tool. Run as the bot user, like at runtime.
-RUN apptainer --version
+# Separate steps so a failure names the tool. Run as the bot user. The base's
+# nss_wrapper (LD_PRELOAD) needs files that only start.sh creates, so build-time
+# checks run without it; tests/smoke.sh covers the real runtime environment.
+RUN unset LD_PRELOAD; apptainer --version
 RUN set -eux; \
+  unset LD_PRELOAD; \
   HOME="$(mktemp -d)"; export HOME; \
   nix --version; \
   nix eval --expr '1 + 1'; \
