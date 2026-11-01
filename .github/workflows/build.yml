@@ -5,12 +5,12 @@ name: Build and publish image
 #   :<base-tag>            moving, rebuilt on every change (pin it by digest)
 #   :<base-tag>-<sha7>     immutable, one per commit
 #   :latest
-# Renovate bumps the base, Nix and Apptainer pins; its PRs run the build and the
-# smoke test without pushing, and each merge to main publishes.
+# Renovate commits its bumps (base, Nix, Apptainer, actions) straight to main;
+# every push builds, runs the smoke test and only then publishes, so a broken
+# update never replaces the published tags. No pull_request trigger.
 on:
   push:
     branches: [main]
-  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -76,7 +76,6 @@ jobs:
             rakazo-computer:test /tests/smoke.sh
 
       - name: Log in to GHCR
-        if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -85,7 +84,6 @@ jobs:
 
       - name: Push
         id: push
-        if: github.event_name != 'pull_request'
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -99,7 +97,6 @@ jobs:
           cache-from: type=gha
 
       - name: Record the digest
-        if: github.event_name != 'pull_request'
         run: |
           {
             echo "## ${{ steps.meta.outputs.base_tag }}"

@@ -61,13 +61,13 @@ is `~/.apptainer/cache` (persistent home); temporary sandboxes go to `/tmp`.
 
 ## Build
 
-`.github/workflows/build.yml`, on push to `main`, pull requests and manual runs:
+`.github/workflows/build.yml`, on push to `main` and manual runs (no pull request builds):
 
 1. builds the image (`linux/amd64`, GitHub Actions cache),
 2. runs `tests/smoke.sh` inside it as uid 1000 with an empty home, no seccomp filter (like the pod): Nix flakes
    (`nix run nixpkgs#hello`), `NIX_CONFIG`, Apptainer (`docker://alpine`), no setuid in the added tools, base tools
    still present,
-3. pushes to GHCR (not for pull requests).
+3. pushes to GHCR only if the smoke test passed.
 
 Local build:
 
@@ -80,9 +80,12 @@ docker run --rm --user 1000:1000 --security-opt seccomp=unconfined \
 ## Updates
 
 Renovate (`renovate.json`) pins and bumps the base image, `nixos/nix`, the Apptainer release (version and sha256 of
-the `.deb`) and the GitHub Actions. Non-major updates are automerged once the build and smoke test pass, and each merge
-publishes a new image. Updates of the Rakazo base are labelled `rakazo-base`: move the app and this image together in
-the deployment.
+the `.deb`) and the GitHub Actions. Non-major updates are committed straight to `main` (branch automerge, no PR,
+`ignoreTests` because no checks run on Renovate branches); that push builds, tests and publishes. A failing update
+does not replace the published tags: fix or revert it on `main`. Major updates open a PR instead.
+Requires the [Renovate GitHub App](https://github.com/apps/renovate) on this repo and no branch protection that blocks
+its pushes to `main`. A new Rakazo base tag publishes a new image tag (e.g. `v0.3.7`): move the app and this image
+together in the deployment.
 
 Manual bump: change the tag and digest in `FROM ghcr.io/elie222/rakazo/computer:…` (`crane digest <ref>`), or
 `APPTAINER_VERSION` + `APPTAINER_SHA256` (`sha256sum` of the release `.deb`).

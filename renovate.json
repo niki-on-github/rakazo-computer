@@ -7,15 +7,19 @@
   ],
   "dependencyDashboard": true,
   "dependencyDashboardTitle": "Renovate Dashboard",
-  "labels": ["renovatebot"],
+  "labels": [
+    "renovatebot"
+  ],
   "minimumReleaseAge": "1 day",
   "automerge": true,
-  "automergeType": "pr",
+  "automergeType": "branch",
   "customManagers": [
     {
       "description": "Apptainer .deb: version and sha256 of the release attachment",
       "customType": "regex",
-      "managerFilePatterns": ["/(^|/)Dockerfile$/"],
+      "managerFilePatterns": [
+        "/(^|/)Dockerfile$/"
+      ],
       "matchStrings": [
         "ARG APPTAINER_VERSION=(?<currentValue>\\S+)\\s+ARG APPTAINER_SHA256=(?<currentDigest>[a-f0-9]{64})"
       ],
@@ -25,15 +29,15 @@
   ],
   "packageRules": [
     {
-      "description": "The base tag must match the Rakazo app tag deployed in nixos-ai; label it so it stands out",
-      "matchPackageNames": ["ghcr.io/elie222/rakazo/computer"],
-      "addLabels": ["rakazo-base"]
-    },
-    {
-      "description": "Major updates need a look",
-      "matchUpdateTypes": ["major"],
+      "description": "Major updates open a PR for review instead of being committed to main",
+      "matchUpdateTypes": [
+        "major"
+      ],
       "automerge": false,
-      "addLabels": ["type/major"]
+      "addLabels": [
+        "type/major"
+      ]
     }
-  ]
+  ],
+  "ignoreTests": true
 }
