@@ -6,10 +6,11 @@ set -euo pipefail
 fail() { echo "FAIL: $*" >&2; exit 1; }
 step() { echo "--- $*"; }
 
-# start.sh normally writes these; nss_wrapper needs them for user lookups.
+# start.sh writes these in a real computer pod; only create them in CI, where
+# it never ran. nss_wrapper needs them for user lookups.
 mkdir -p /tmp/rakazo-nss
-echo "rakazo:x:$(id -u):$(id -g)::$HOME:/bin/bash" > /tmp/rakazo-nss/passwd
-echo "rakazo:x:$(id -g):" > /tmp/rakazo-nss/group
+[ -s /tmp/rakazo-nss/passwd ] || echo "rakazo:x:$(id -u):$(id -g)::$HOME:/bin/bash" > /tmp/rakazo-nss/passwd
+[ -s /tmp/rakazo-nss/group ] || echo "rakazo:x:$(id -g):" > /tmp/rakazo-nss/group
 # The workflow starts this script without the preload (the files did not exist
 # yet); enable it now, like the base's user-env does once the files exist.
 export LD_PRELOAD=/usr/local/lib/libnss_wrapper.so
