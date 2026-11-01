@@ -31,7 +31,7 @@ then use the computer's **Update** action to recreate the pod.
 |---|---|---|
 | Nix | `/nix` copied from `nixos/nix`, owned by uid 1000 | Single-user, no daemon, `sandbox = false`, flakes on. On `PATH` (after the Debian tools) for exec and login shells. |
 | Apptainer | upstream non-suid `.deb`, sha256 pinned | Unprivileged user-namespace mode. The `uidmap` it pulls in is stripped of setuid, so mapping is single-uid. |
-| Bot guide | `/usr/share/doc/rakazo-computer/GUIDE.md` | How to use the computer: no root, Nix instead of apt, Apptainer, GPU, disk. |
+| Bot guide | `/usr/share/doc/rakazo-computer/GUIDE.md` | How to use the computer: no root, Nix instead of apt, PyPI and Hugging Face caches, Apptainer, GPU, disk. |
 
 Point the bots at the guide in their instructions, e.g.:
 
@@ -62,10 +62,35 @@ apptainer exec docker://alpine:3 cat /etc/alpine-release
 apptainer exec --nv docker://nvidia/cuda:<tag> nvidia-smi   # only if the pod has a GPU
 ```
 
+On NixOS nodes the NVIDIA container runtime injects `nvidia-smi`, `libcuda` and their glibc as `/nix/store` paths,
+so `apptainer.conf` also sets `bind path = /nix/store`; without it `--nv` fails with missing shared libraries.
+`APPTAINERENV_LD_PRELOAD=` keeps the base image's nss_wrapper preload out of containers.
+
 The pod's masked `/proc` does not allow a fresh `/proc` mount, so `apptainer.conf` sets `mount proc = no` and
 `bind path = /proc`: containers see the pod's `/proc`. Do not use `--pid` / `--containall`. The pod has no
 `/dev/fuse`, so the image sets `APPTAINER_UNSQUASH=true`: SIF images are unpacked to a temporary sandbox in `/tmp`
 instead of being mounted with squashfuse. The image cache is `~/.apptainer/cache` (persistent home).
+
+## Verified in a Rakazo pod
+
+Tested 2026-11-01 as a bot in a `v0.3.6` computer on Kubernetes (NixOS node, NVIDIA runtime class, one GPU exposed
+with `NVIDIA_VISIBLE_DEVICES`, local caches injected through `NIX_CONFIG`, `PIP_INDEX_URL`/`UV_DEFAULT_INDEX` and
+`HF_ENDPOINT` by an admission policy):
+
+| Check | Result |
+|---|---|
+| `tests/smoke.sh` | `ALL OK` |
+| `nix shell nixpkgs#…` | works; paths come from the configured cache |
+| `nvidia-smi -L` | only the exposed GPU |
+| `uv pip install torch`, `torch.cuda.is_available()` + matmul | `2.15.0+cu132 True`; runs on the GPU. The wheel bundles CUDA, no `LD_LIBRARY_PATH` needed. |
+| `uv run --with huggingface_hub hf download gpt2 config.json` | works through the `HF_ENDPOINT` mirror |
+| `apptainer exec --nv docker://nvidia/cuda:12.9.1-base-ubuntu24.04 nvidia-smi -L` | shows the exposed GPU |
+
+Not supported: Podman/Docker (would need `hostUsers: false`, `procMount: Unmasked` and a setuid `uidmap`), building
+images from Dockerfiles (Apptainer builds from `.def` files; `--fakeroot` is untested), `apptainer --pid`/`--containall`/`--net`.
+
+Bots on graphical computers: Rakazo's shell tool refuses `$(...)`, backticks, `$((...))`, heredocs, unresolved `$VAR`
+and `kill`; the guide tells them.
 
 ## Build
 

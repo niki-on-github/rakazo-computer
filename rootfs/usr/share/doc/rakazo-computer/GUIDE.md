@@ -18,7 +18,8 @@ around the guard. Never stop or restart the browser or desktop processes.
 - The home is on a disk shared with other bots. Keep it small and clean up caches you no longer need (see "Disk").
 - Limits: 2 CPU, 32 GiB RAM. The machine and its RAM are shared with other services; avoid large builds
   and huge downloads.
-- Network: the internet is reachable. Private and LAN addresses are blocked, except the Nix cache and the LLM gateway.
+- Network: the internet is reachable. Private and LAN addresses are blocked, except the local caches (Nix, PyPI,
+  Hugging Face) and the LLM gateway.
 - Never store secrets (tokens, passwords, keys) in files in the home.
 
 ## Already installed
