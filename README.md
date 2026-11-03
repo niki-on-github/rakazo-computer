@@ -122,3 +122,7 @@ together in the deployment.
 
 Manual bump: change the tag and digest in `FROM ghcr.io/elie222/rakazo/computer:…` (`crane digest <ref>`), or
 `APPTAINER_VERSION` + `APPTAINER_SHA256` (`sha256sum` of the release `.deb`).
+
+## Usage
+
+`gh` is preinstalled on the computer. To use it simply create a Classic PAT: repo + workflow rights. Enter this token in Settings > Vault with name `gh-token`.
