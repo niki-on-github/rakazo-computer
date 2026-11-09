@@ -5,7 +5,7 @@
 # screen/terminal helpers in the base are versioned with the app.
 
 # Nix: the official image ships a complete single-user store in /nix.
-FROM docker.io/nixos/nix:2.35.4@sha256:f159a58f390677f41e8e900a74b6e2f9c7f27b364122ae6acf7a652ce6c551c0 AS nix
+FROM docker.io/nixos/nix:2.35.5@sha256:9305de534abed691d0f569502a4962a3a072ea8e888502c453ecfe35ae182867 AS nix
 
 FROM ghcr.io/elie222/rakazo/computer:v0.3.6@sha256:3b821e1a0074bd05b62d5b3d1422480074d98aad4102b7e1072f4fe38721c3bb
 
